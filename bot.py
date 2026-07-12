@@ -1,7 +1,8 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
+import os
 
-BOT_TOKEN = "YOUR_BOT_TOKEN"
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 PUBLIC_CHANNEL = "@crazy_tasnu"
 PRIVATE_LINK = "https://t.me/+K4NnT9Xqs3dmNGU9"

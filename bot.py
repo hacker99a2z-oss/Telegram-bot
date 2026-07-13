@@ -1,30 +1,34 @@
 import os
+import logging
+from flask import Flask, request
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from flask import Flask, request
 
-TOKEN = os.environ["BOT_TOKEN"]
+logging.basicConfig(level=logging.INFO)
+
+TOKEN = os.environ.get("BOT_TOKEN")
+RENDER_URL = os.environ.get("RENDER_EXTERNAL_URL")
 
 PUBLIC_CHANNEL = "https://t.me/crazy_tasnu"
 PUBLIC_USERNAME = "@crazy_tasnu"
 
 PRIVATE_LINK = "https://t.me/+K4NnT9Xqs3dmNGU9"
 
-bot = telebot.TeleBot(TOKEN)
+bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
 
 
 def keyboard():
     kb = InlineKeyboardMarkup()
 
-    kb.row(
+    kb.add(
         InlineKeyboardButton(
             "📢 Join Channel",
             url=PUBLIC_CHANNEL
         )
     )
 
-    kb.row(
+    kb.add(
         InlineKeyboardButton(
             "✅ I've Joined",
             callback_data="check"
@@ -36,11 +40,13 @@ def keyboard():
 
 @bot.message_handler(commands=["start"])
 def start(message):
+    print("START COMMAND RECEIVED")
 
     bot.send_message(
         message.chat.id,
-        "🔒 Private Channel Access\n\n"
-        "প্রথমে Public Channel Join করুন।",
+        "🔒 *Private Channel Access*\n\n"
+        "প্রথমে নিচের Public Channel Join করুন।",
+        parse_mode="Markdown",
         reply_markup=keyboard()
     )
 
@@ -62,14 +68,10 @@ def check(call):
         ]:
 
             bot.edit_message_text(
-
                 "✅ Verification Successful\n\n"
                 f"Private Link:\n{PRIVATE_LINK}",
-
-                call.message.chat.id,
-
-                call.message.message_id
-
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id
             )
 
         else:
@@ -80,41 +82,48 @@ def check(call):
                 show_alert=True
             )
 
-    except:
+    except Exception as e:
+
+        print(e)
 
         bot.answer_callback_query(
             call.id,
-            "আগে Channel Join করুন।",
+            "Verification Failed",
             show_alert=True
         )
-
-
-@app.route("/" + TOKEN, methods=["POST"])
+        @app.route("/" + TOKEN, methods=["POST"])
 def webhook():
+    try:
+        json_str = request.get_data().decode("utf-8")
 
-    json_str = request.get_data().decode("utf-8")
+        update = telebot.types.Update.de_json(json_str)
 
-    update = telebot.types.Update.de_json(json_str)
+        bot.process_new_updates([update])
 
-    bot.process_new_updates([update])
+    except Exception as e:
+        print("Webhook Error:", e)
 
     return "OK", 200
 
 
 @app.route("/")
 def home():
-    return "Bot Running"
+    return "Bot Running", 200
 
 
-if __name__ == "__main__":
+def set_webhook():
+    try:
+        bot.remove_webhook()
 
-    bot.remove_webhook()
+        webhook_url = f"{RENDER_URL}/{TOKEN}"
 
-    url = os.environ["RENDER_EXTERNAL_URL"]
+        bot.set_webhook(url=webhook_url)
 
-    bot.set_webhook(url=f"{url}/{TOKEN}")
+        print("Webhook Set:", webhook_url)
 
-    app.run(
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", 10000))
-    )
+    except Exception as e:
+        print("Webhook Error:", e)
+
+
+# Gunicorn চালু হলে এই কোড একবার execute হবে
+set_webhook()

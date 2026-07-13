@@ -8,7 +8,7 @@ RENDER_URL = os.environ["RENDER_EXTERNAL_URL"]
 
 PUBLIC_CHANNEL = "https://t.me/crazy_tasnu"
 PUBLIC_USERNAME = "@crazy_tasnu"
-PRIVATE_LINK = "https://t.me/+K4NnT9Xqs3dmNGU9"
+PRIVATE_LINK = "https://t.me/+7AC9mIIyjm03Yzdl"
 
 bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
